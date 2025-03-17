@@ -101,6 +101,99 @@ describe("union types defined by type: array", () => {
   });
 });
 
+describe.only("nullable openapi 3.1", () => {
+  it("should generate a string | null", () => {
+    const generator = new ApiGenerator({} as unknown as OpenAPIV3.Document);
+    const node = generator.getBaseTypeFromSchema({
+      type: "object",
+      properties: {
+        lastName: { type: ["string", "null"], example: "Doe" },
+      },
+    });
+
+    expect(printNode(node)).toMatchInlineSnapshot(`
+      "{
+          lastName?: string | null;
+      }"
+    `);
+  });
+
+  it("works with $ref", () => {
+    const spec = {
+      components: {
+        schemas: {
+          UserDTO: {
+            type: ["object", "null"],
+            properties: {
+              firstName: { type: "string" },
+            },
+          },
+        },
+      },
+    } as unknown as OpenAPIV3.Document;
+
+    const generator = new ApiGenerator(spec);
+
+    const node = generator.getBaseTypeFromSchema({
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          example: "70a76f01-c455-4b24-a980-15953733325e",
+        },
+        user: {
+          $ref: "#/components/schemas/UserDTO",
+        },
+      },
+    });
+
+    expect(printNode(node)).toMatchInlineSnapshot(`
+      "{
+          id?: string;
+          user?: UserDto;
+      }"
+    `);
+  });
+
+  it("anyOf workaround", () => {
+    const spec = {
+      components: {
+        schemas: {
+          UserDTO: {
+            type: ["object", "null"],
+            properties: {
+              firstName: { type: "string" },
+            },
+          },
+        },
+      },
+    } as unknown as OpenAPIV3.Document;
+
+    const generator = new ApiGenerator(spec);
+
+    const node = generator.getBaseTypeFromSchema({
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          example: "70a76f01-c455-4b24-a980-15953733325e",
+        },
+        user: {
+          type: "object",
+          anyOf: [{ $ref: "#/components/schemas/UserDTO" }, { type: "null" }],
+        },
+      },
+    });
+
+    expect(printNode(node)).toMatchInlineSnapshot(`
+      "{
+          id?: string;
+          user?: UserDto | null;
+      }"
+    `);
+  });
+});
+
 describe("getUnionType", () => {
   describe("discriminator with propertyName", () => {
     describe("propertyName doesn’t exists", () => {
