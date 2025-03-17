@@ -639,7 +639,23 @@ export default class ApiGenerator {
   ): ts.TypeNode {
     if (!schema && typeof schema !== "boolean") return cg.keywordType.any;
     if (isReference(schema)) {
-      return this.getRefAlias(schema, onlyMode) as ts.TypeReferenceNode;
+      const refNode = this.getRefAlias(
+        schema,
+        onlyMode,
+      ) as ts.TypeReferenceNode;
+
+      if (Array.isArray(schema.type)) {
+        return factory.createUnionTypeNode([
+          refNode,
+          ...schema.type
+            .filter((type) => type !== "object")
+            .map((type) => {
+              return this.getBaseTypeFromSchema({ type }, name, onlyMode);
+            }),
+        ]);
+      }
+
+      return refNode;
     }
 
     if (schema === true) {

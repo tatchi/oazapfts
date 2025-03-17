@@ -5,7 +5,7 @@ import ApiGenerator, {
   isMimeType,
 } from "./generate";
 import { printNode } from "./tscodegen";
-import { OpenAPIV3 } from "openapi-types";
+import { OpenAPIV3, OpenAPIV3_1 } from "openapi-types";
 
 describe("getOperationName", () => {
   it("should use the id", () => {
@@ -123,14 +123,13 @@ describe.only("nullable openapi 3.1", () => {
       components: {
         schemas: {
           UserDTO: {
-            type: ["object", "null"],
             properties: {
               firstName: { type: "string" },
             },
           },
         },
       },
-    } as unknown as OpenAPIV3.Document;
+    } as unknown as OpenAPIV3_1.Document;
 
     const generator = new ApiGenerator(spec);
 
@@ -142,6 +141,7 @@ describe.only("nullable openapi 3.1", () => {
           example: "70a76f01-c455-4b24-a980-15953733325e",
         },
         user: {
+          type: ["object", "null"],
           $ref: "#/components/schemas/UserDTO",
         },
       },
@@ -150,7 +150,7 @@ describe.only("nullable openapi 3.1", () => {
     expect(printNode(node)).toMatchInlineSnapshot(`
       "{
           id?: string;
-          user?: UserDto;
+          user?: UserDto | null;
       }"
     `);
   });
